@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gyroscope Ball</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+        }
+        .status {
+            color: red;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gyroscope Ball</h1>
+    <p class="status">Waiting for gyroscope data...</p>
+    <canvas id="ballCanvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('ballCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const statusElement = document.querySelector('.status');
+
+        // Ball properties
+        let ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 20,
+            dx: 0,
+            dy: 0,
+        };
+
+        // Draw the ball on the canvas
+        function drawBall() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "#007bff";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // Update ball position based on gyroscope values
+        function updateBall() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Keep the ball inside the canvas
+            if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
+                ball.x = Math.min(Math.max(ball.x, ball.radius), canvas.width - ball.radius);
+            }
+            if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+                ball.y = Math.min(Math.max(ball.y, ball.radius), canvas.height - ball.radius);
+            }
+
+            drawBall();
+        }
+
+        if ('Gyroscope' in window) {
+            const gyroscope = new Gyroscope({ frequency: 60 });
+
+            gyroscope.addEventListener('reading', () => {
+                statusElement.textContent = 'Reading gyroscope data...';
+                statusElement.style.color = 'green';
+
+                // Update ball velocity based on gyroscope data
+                ball.dx = gyroscope.x * 2; // Adjust multiplier for sensitivity
+                ball.dy = gyroscope.y * 2;
+            });
+
+            gyroscope.addEventListener('error', (event) => {
+                statusElement.textContent = `Gyroscope error: ${event.error}`;
+                statusElement.style.color = 'red';
+            });
+
+            gyroscope.start();
+
+            // Start animation loop
+            function animate() {
+                updateBall();
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        } else {
+            statusElement.textContent = 'Gyroscope not supported by this browser.';
+        }
+    </script>
+</body>
+</html>
